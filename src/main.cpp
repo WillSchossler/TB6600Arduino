@@ -1,23 +1,20 @@
 #include <Arduino.h>
 #define IN_POT A0  
-#define IN_ENA 8
+#define IN_ENA 10
 #define IN_DIR 9
-#define OUT_ENA 5
-#define OUT_DIR 4
-#define OUT_PUL 3
+#define IN_START 8
+#define OUT_ENA 7
+#define OUT_DIR 6
+#define OUT_PUL 5
 
-bool enabled; /* Define se o motor pode girar.
-O pino é definido como um input pullup, que ao ser aterrado (gnd) habilita
-o movimento (ena). Use um botão de emergencia, ou simplesmente aterre */
-
-bool direction; /* Define a direção de rotação. Também é input pullup, que ao 
-ser aterrado (chave gira seletora) altera a direção (dir) */
-
-bool ena;  // Executa o estado do enabled
-bool dir;  // Define a direção no driver
-bool pul;  // Pino responsável pelo PWM
+int pot;
+int delayStep;
+bool started;
+bool enabled;
+bool direction;
 
 void setup() {  
+  pinMode(IN_START, INPUT_PULLUP);
   pinMode(IN_ENA, INPUT_PULLUP);
   pinMode(IN_DIR, INPUT_PULLUP);
   pinMode(OUT_ENA, OUTPUT);
@@ -26,8 +23,30 @@ void setup() {
 }
 
 void loop() {
-  enabled = digitalRead(IN_ENA);  // Só permitir
-  direction = digitalRead(IN_DIR); // Checar o sentido, tem input pullup!
+  started = digitalRead(IN_START);
+  enabled = digitalRead(IN_ENA); 
+  direction = digitalRead(IN_DIR);
 
-  
+  if (!enabled) {
+    digitalWrite(OUT_ENA, HIGH);
+    digitalWrite(OUT_DIR, direction);
+    if (!started) {
+      pot = analogRead(IN_POT);
+      delayStep = map(pot, 0, 1023, 2000, 200); 
+
+      digitalWrite(OUT_PUL, HIGH);
+      delayMicroseconds(delayStep);
+
+      digitalWrite(OUT_PUL, LOW);
+      delayMicroseconds(delayStep);
+    }
+    else {
+      digitalWrite(OUT_PUL, LOW);
+    }
+    
+  }
+  else {
+    digitalWrite(OUT_PUL, LOW);
+    digitalWrite(OUT_ENA, LOW);
+  }
 }
